@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       # 1. Checkout source code
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -27,7 +28,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # 3. Give Maven Wrapper execute permission
+      # 3. Make Maven Wrapper executable
       - name: Make Maven Wrapper executable
         run: chmod +x mvnw
 
@@ -38,3 +39,11 @@ jobs:
       # 5. Build Spring Boot application
       - name: Build application
         run: ./mvnw clean package -DskipTests
+
+      # 6. Build backend Docker image
+      - name: Build backend Docker image
+        run: docker build -t ecommerce-backend:ci .
+
+      # 7. Build frontend Docker image
+      - name: Build frontend Docker image
+        run: docker build -t ecommerce-frontend:ci ./ecommerce-frontend
