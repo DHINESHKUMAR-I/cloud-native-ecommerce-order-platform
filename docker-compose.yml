@@ -1,0 +1,75 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: ecommerce-mysql
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: ecommerce
+      MYSQL_USER: ecommerce_user
+      MYSQL_PASSWORD: ecommerce_pass
+
+    volumes:
+      - ecommerce-mysql-data:/var/lib/mysql
+
+    networks:
+      - ecommerce-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: ecommerce-backend:1.0
+    container_name: ecommerce-backend
+
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/ecommerce
+      DB_USERNAME: ecommerce_user
+      DB_PASSWORD: ecommerce_pass
+
+    ports:
+      - "8080:8081"
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    networks:
+      - ecommerce-network
+
+
+  frontend:
+    build:
+      context: ./ecommerce-frontend
+      dockerfile: Dockerfile
+
+    image: ecommerce-frontend:1.0
+    container_name: ecommerce-frontend
+
+    ports:
+      - "3000:80"
+
+    depends_on:
+      - backend
+
+    networks:
+      - ecommerce-network
+
+
+volumes:
+  ecommerce-mysql-data:
+
+
+networks:
+  ecommerce-network:
+    driver: bridge
