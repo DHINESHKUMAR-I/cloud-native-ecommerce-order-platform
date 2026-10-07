@@ -14,6 +14,7 @@ env:
   AWS_REGION: us-east-1
   BACKEND_IMAGE: ecommerce-backend
   FRONTEND_IMAGE: ecommerce-frontend
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   build:
@@ -62,24 +63,24 @@ jobs:
       - name: Build backend Docker image
         run: |
           docker build \
-            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.BACKEND_IMAGE }}:latest \
+            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }} \
             .
 
       # 9. Build frontend Docker image
       - name: Build frontend Docker image
         run: |
           docker build \
-            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_IMAGE }}:latest \
+            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }} \
             ./ecommerce-frontend
 
       # 10. Push backend image to ECR
       - name: Push backend image to ECR
         run: |
           docker push \
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.BACKEND_IMAGE }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}
 
       # 11. Push frontend image to ECR
       - name: Push frontend image to ECR
         run: |
           docker push \
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_IMAGE }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
