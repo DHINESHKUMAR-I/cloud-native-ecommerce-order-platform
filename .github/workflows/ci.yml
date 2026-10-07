@@ -10,6 +10,11 @@ on:
     branches:
       - main
 
+env:
+  AWS_REGION: us-east-1
+  BACKEND_IMAGE: ecommerce-backend
+  FRONTEND_IMAGE: ecommerce-frontend
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -40,10 +45,41 @@ jobs:
       - name: Build application
         run: ./mvnw clean package -DskipTests
 
-      # 6. Build backend Docker image
-      - name: Build backend Docker image
-        run: docker build -t ecommerce-backend:ci .
+      # 6. Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      # 7. Build frontend Docker image
+      # 7. Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 8. Build backend Docker image
+      - name: Build backend Docker image
+        run: |
+          docker build \
+            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.BACKEND_IMAGE }}:latest \
+            .
+
+      # 9. Build frontend Docker image
       - name: Build frontend Docker image
-        run: docker build -t ecommerce-frontend:ci ./ecommerce-frontend
+        run: |
+          docker build \
+            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_IMAGE }}:latest \
+            ./ecommerce-frontend
+
+      # 10. Push backend image to ECR
+      - name: Push backend image to ECR
+        run: |
+          docker push \
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.BACKEND_IMAGE }}:latest
+
+      # 11. Push frontend image to ECR
+      - name: Push frontend image to ECR
+        run: |
+          docker push \
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_IMAGE }}:latest
